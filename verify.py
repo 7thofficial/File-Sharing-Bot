@@ -4,20 +4,18 @@ import random
 import pytz
 from datetime import date
 import requests as re
-from config import SHORTNER_URL, SHORTNER_API
 
-SHORTNER = os.environ.get("SHORTNER_URL")
-API = os.environ.get("SHORTNER_API")
+SHORTNER_URL = os.environ.get("SHORTNER_URL")
+SHORTNER_API = os.environ.get("SHORTNER_API")
 
 async def get_shortlink(link):
-    res = re.get(f'https://{SHORTNER}/api?api={API}&url={link}')
+    res = re.get(f'https://{SHORTNER_URL}/api?api={SHORTNER_API}&url={link}')
     res.raise_for_status()
     data = res.json()
     return data.get('shortenedUrl')
 
 TOKENS = {}
 VERIFIED = {}
-
 
 async def generate_random_string(num: int):
     characters = string.ascii_letters + string.digits
@@ -26,17 +24,12 @@ async def generate_random_string(num: int):
 
 async def check_token(bot, userid, token):
     user = await bot.get_users(userid)
-    if user.id in TOKENS.keys():
+    if user.id in TOKENS:
         TKN = TOKENS[user.id]
-        if token in TKN.keys():
+        if token in TKN:
             is_used = TKN[token]
-            if is_used == True:
-                return False
-            else:
-                return True
-    else:
-        return False
-
+            return not is_used
+    return False
 
 async def get_token(bot, userid, link):
     user = await bot.get_users(userid)
@@ -57,13 +50,9 @@ async def check_verification(bot, userid):
     user = await bot.get_users(userid)
     tz = pytz.timezone('Asia/Kolkata')
     today = date.today()
-    if user.id in VERIFIED.keys():
+    if user.id in VERIFIED:
         EXP = VERIFIED[user.id]
-        years, month, day = EXP.split('-')
-        comp = date(int(years), int(month), int(day))
-        if comp < today:
-            return False
-        else:
-            return True
-    else:
-        return False
+        years, month, day = map(int, EXP.split('-'))
+        comp = date(years, month, day)
+        return comp >= today
+    return False
