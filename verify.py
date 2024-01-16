@@ -2,7 +2,7 @@ import os
 import string
 import random
 import pytz
-from datetime import date, timedelta
+from datetime import datetime, timedelta
 import requests as re
 
 SHORTNER_URL = os.environ.get("SHORTNER_URL")
@@ -43,15 +43,15 @@ async def verify_user(bot, userid, token):
     user = await bot.get_users(userid)
     TOKENS[user.id] = {token: True}
     tz = pytz.timezone('Asia/Kolkata')
-    today = date.today()
-    VERIFIED[user.id] = today
+    now = datetime.now(tz)
+    VERIFIED[user.id] = now
 
 async def check_verification(bot, userid):
     user = await bot.get_users(userid)
     tz = pytz.timezone('Asia/Kolkata')
-    today = date.today()
+    now = datetime.now(tz)
     if user.id in VERIFIED:
         last_verified = VERIFIED[user.id]
         cooldown_period = timedelta(days=1)  # 24 hours cooldown
-        return (today - last_verified) >= cooldown_period
+        return (now - last_verified) >= cooldown_period
     return False
