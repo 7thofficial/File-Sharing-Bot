@@ -8,6 +8,11 @@ import logging
 from logging.handlers import RotatingFileHandler
 
 
+#Your API KEY OF SHORTNER
+SHORTNER_API = os.environ.get("SHORTNER_API", "")
+
+#Your SHORTNER SITE
+SHORTNER_URL = os.environ.get("SHORTNER_URL", "")
 
 #Bot token @Botfather
 TG_BOT_TOKEN = os.environ.get("TG_BOT_TOKEN", "")
