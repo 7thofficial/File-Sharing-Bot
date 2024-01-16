@@ -1,19 +1,23 @@
+#(©)CodeXBotz
 
 
+
+
+# Import necessary modules and functions
 import os
 import asyncio
 from pyrogram import Client, filters, __version__
 from pyrogram.enums import ParseMode
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from pyrogram.errors import FloodWait, UserIsBlocked, InputUserDeactivated
-
+from verify import *  # Import your verification-related functions here
 from bot import Bot
 from config import ADMINS, FORCE_MSG, START_MSG, CUSTOM_CAPTION, DISABLE_CHANNEL_BUTTON, PROTECT_CONTENT
 from helper_func import subscribed, encode, decode, get_messages
 from database.database import add_user, del_user, full_userbase, present_user
 
-
-
+SECONDS = int(os.getenv("SECONDS", "10"))  # Add time in seconds for waiting before deleting
+VERIFY = "True"
 
 @Bot.on_message(filters.command('start') & filters.private & subscribed)
 async def start_command(client: Client, message: Message):
@@ -24,7 +28,59 @@ async def start_command(client: Client, message: Message):
         except:
             pass
     text = message.text
-    if len(text)>7:
+
+    if VERIFY and not await check_verification(client, message.from_user.id):
+        msg = await message.reply("Please Wait...")
+        ex_text = "**Verification Expired!**\n\nYou have to verify again."
+        btn = [[
+            InlineKeyboardButton("Verify", url=await get_token(client, message.from_user.id, f"https://telegram.me/{client.username}?start="))
+        ]]
+        reply_markup = InlineKeyboardMarkup(btn)
+        ex = await message.reply_text(
+            text=ex_text,
+            reply_markup=reply_markup
+        )
+        await msg.delete()
+        await asyncio.sleep(120)  # Adjust the waiting time if needed
+        await ex.delete()
+        return
+        
+    data = message.command[1]
+    if len(message.command) > 1:        
+        if data.split("-", 1)[0] == "verify":
+            userid = data.split("-", 2)[1]
+            token = data.split("-", 3)[2]
+
+            if str(message.from_user.id) != str(userid):
+                return
+
+            arg = await message.reply_text(
+                text="The token you provided is invalid\n\nPlease use a new token.",
+            )
+
+            await asyncio.sleep(5)
+            await arg.delete()
+
+            chck = await check_token(client, userid, token)
+
+            if chck:
+                arg = await message.reply_text(
+                    text="You are Verified for today,\n\nNow you can use me.",
+                    protect_content=False
+                )
+                await verify_user(client, userid, token)
+                await asyncio.sleep(20)
+                await arg.delete()
+            else:
+                return
+
+            arg = await message.reply_text(
+                text="Invalid token\n\nUse a new token.",
+            )
+            await asyncio.sleep(25)
+            await arg.delete()
+            
+    if len(text) > 7:
         try:
             base64_string = text.split(" ", 1)[1]
         except:
@@ -38,7 +94,7 @@ async def start_command(client: Client, message: Message):
             except:
                 return
             if start <= end:
-                ids = range(start,end+1)
+                ids = range(start, end + 1)
             else:
                 ids = []
                 i = start
@@ -52,7 +108,7 @@ async def start_command(client: Client, message: Message):
                 ids = [int(int(argument[1]) / abs(client.db_channel.id))]
             except:
                 return
-        temp_msg = await message.reply("Please wait...")
+        temp_msg = await message.reply("Please wait Baby...")
         try:
             messages = await get_messages(client, ids)
         except:
@@ -60,10 +116,12 @@ async def start_command(client: Client, message: Message):
             return
         await temp_msg.delete()
 
+        snt_msgs = []
+
         for msg in messages:
 
             if bool(CUSTOM_CAPTION) & bool(msg.document):
-                caption = CUSTOM_CAPTION.format(previouscaption = "" if not msg.caption else msg.caption.html, filename = msg.document.file_name)
+                caption = CUSTOM_CAPTION.format(previouscaption="" if not msg.caption else msg.caption.html, filename=msg.document.file_name)
             else:
                 caption = "" if not msg.caption else msg.caption.html
 
@@ -73,34 +131,50 @@ async def start_command(client: Client, message: Message):
                 reply_markup = None
 
             try:
-                await msg.copy(chat_id=message.from_user.id, caption = caption, parse_mode = ParseMode.HTML, reply_markup = reply_markup, protect_content=PROTECT_CONTENT)
+                snt_msg = await msg.copy(chat_id=message.from_user.id, caption=caption, parse_mode=ParseMode.HTML, reply_markup=reply_markup,
+                                          protect_content=PROTECT_CONTENT)
                 await asyncio.sleep(0.5)
+                snt_msgs.append(snt_msg)
             except FloodWait as e:
                 await asyncio.sleep(e.x)
-                await msg.copy(chat_id=message.from_user.id, caption = caption, parse_mode = ParseMode.HTML, reply_markup = reply_markup, protect_content=PROTECT_CONTENT)
+                snt_msg = await msg.copy(chat_id=message.from_user.id, caption=caption, parse_mode=ParseMode.HTML, reply_markup=reply_markup,
+                                          protect_content=PROTECT_CONTENT)
+                snt_msgs.append(snt_msg)
             except:
                 pass
+
+        await asyncio.sleep(SECONDS)
+
+        for snt_msg in snt_msgs:
+            try:
+                await snt_msg.delete()
+            except:
+                pass
+
         return
     else:
         reply_markup = InlineKeyboardMarkup(
             [
                 [
-                    InlineKeyboardButton("😊 About Me", callback_data = "about"),
-                    InlineKeyboardButton("🔒 unlock", url="https://shrs.link/FUmxXe")
+                    InlineKeyboardButton("😊 About Me", callback_data="about"),
+                    InlineKeyboardButton("🔒 Close", callback_data="close")
                 ]
             ]
         )
+
+        
+
         await message.reply_text(
-            text = START_MSG.format(
-                first = message.from_user.first_name,
-                last = message.from_user.last_name,
-                username = None if not message.from_user.username else '@' + message.from_user.username,
-                mention = message.from_user.mention,
-                id = message.from_user.id
+            text=START_MSG.format(
+                first=message.from_user.first_name,
+                last=message.from_user.last_name,
+                username=None if not message.from_user.username else '@' + message.from_user.username,
+                mention=message.from_user.mention,
+                id=message.from_user.id
             ),
-            reply_markup = reply_markup,
-            disable_web_page_preview = True,
-            quote = True
+            reply_markup=reply_markup,
+            disable_web_page_preview=True,
+            quote=True
         )
         return
 
