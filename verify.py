@@ -45,6 +45,7 @@ async def verify_user(bot, userid, token):
     tz = pytz.timezone('Asia/Kolkata')
     now = datetime.now(tz)
     VERIFIED[user.id] = now
+    return now
 
 async def check_verification(bot, userid):
     user = await bot.get_users(userid)
@@ -55,3 +56,6 @@ async def check_verification(bot, userid):
         cooldown_period = timedelta(days=1)  # 24 hours cooldown
         return (now - last_verified) >= cooldown_period
     return False
+
+async def get_verification_message():
+    return "You have been verified! You can use the bot for the next 24 hours."
