@@ -1,72 +1,22 @@
+#(©)CodeXBotz
+
+
+
+
 import os
 import asyncio
 from pyrogram import Client, filters, __version__
 from pyrogram.enums import ParseMode
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from pyrogram.errors import FloodWait, UserIsBlocked, InputUserDeactivated
-import random
+
 from bot import Bot
 from config import ADMINS, FORCE_MSG, START_MSG, CUSTOM_CAPTION, DISABLE_CHANNEL_BUTTON, PROTECT_CONTENT
 from helper_func import subscribed, encode, decode, get_messages
 from database.database import add_user, del_user, full_userbase, present_user
 
-# Connect to MongoDB
-mongo_client = pymongo.MongoClient(os.getenv("mongodb+srv://sony:max@cluster0.6hr1bg7.mongodb.net/?retryWrites=true&w=majority"))
-db = mongo_client["Cluster0"]
-token_collection = db["tokens"]
-user_collection = db["users"]
-
-def generate_tokens():
-    tokens = [str(random.randint(100000, 999999)) for _ in range(10)]
-    token_collection.insert_many({"token": token} for token in tokens)
 
 
-def get_unused_token():
-    unused_tokens = token_collection.find({"user_id": {"$exists": False}})
-    return unused_tokens[0] if unused_tokens else None
-
-
-@Bot.on_message(filters.command("start"))
-async def start_command(client: Client, message: Message):
-    user_id = message.from_user.id
-
-    # Check if the user is already in the database
-    if user_collection.find_one({"user_id": user_id}):
-        await message.reply("You have already started the bot!")
-    else:
-        # Assign a token to the user
-        unused_token = get_unused_token()
-        if unused_token:
-            token = unused_token["token"]
-            user_collection.insert_one({"user_id": user_id, "token": token})
-            await message.reply(f"Welcome! Your token is: `{token}`")
-        else:
-            await message.reply("Sorry, no available tokens at the moment. Try again later.")
-
-
-@Bot.on_callback_query()
-async def handle_callback_query(client: Client, query):
-    user_id = query.from_user.id
-    token = query.data
-
-    # Check if the user has already provided a token
-    if user_collection.find_one({"user_id": user_id}):
-        await query.answer("You have already provided a token.")
-    else:
-        # Update the database with the provided token
-        token_entry = token_collection.find_one({"token": token, "user_id": {"$exists": False}})
-        if token_entry:
-            token_collection.update_one({"_id": token_entry["_id"]}, {"$set": {"user_id": user_id}})
-            user_collection.insert_one({"user_id": user_id, "token": token})
-            await query.answer("Token accepted!")
-        else:
-            await query.answer("Invalid token. Please try again.")
-
-
-@Bot.on_message(filters.command("generate_tokens"))
-async def generate_tokens_command(client: Client, message: Message):
-    generate_tokens()
-    await message.reply("Tokens generated and saved to the database.")
 
 @Bot.on_message(filters.command('start') & filters.private & subscribed)
 async def start_command(client: Client, message: Message):
@@ -139,7 +89,7 @@ async def start_command(client: Client, message: Message):
             [
                 [
                     InlineKeyboardButton("😊 About Me", callback_data = "about"),
-                    InlineKeyboardButton("🔒 unlock", url="https://shrs.link/FUmxXe")
+                    InlineKeyboardButton("🔒 Close", callback_data = "close")
                 ]
             ]
         )
