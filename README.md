@@ -69,7 +69,7 @@ The fastest way to deploy the application is to click the **Deploy to Koyeb** bu
 
 #### Deploy in your VPS
 ````bash
-git clone https://github.com/7thofficial/File-Sharing-Bot
+git clone https://github.com/whatsin1/File-Sharing-Bot
 cd File-Sharing-Bot
 pip3 install -r requirements.txt
 # <Create config.py appropriately>
@@ -111,7 +111,7 @@ stats - checking your bot uptime
 
 * `CUSTOM_CAPTION` put your Custom caption text if you want Setup Custom Caption, you can use HTML and <a href='https://github.com/CodeXBotz/File-Sharing-Bot/blob/main/README.md#custom_caption'>fillings</a> for formatting (only for documents)
 * `DISABLE_CHANNEL_BUTTON` Put True to Disable Channel Share Button, Default if False
-* `BOT_STATS_TEXT` put your custom text for stats command, use HTML and <a href='https://github.com/7thofficial/File-Sharing-Bot/blob/main/README.md#custom_stats'>fillings</a>
+* `BOT_STATS_TEXT` put your custom text for stats command, use HTML and <a href='https://github.com/whatsin1/File-Sharing-Bot/blob/main/README.md#custom_stats'>fillings</a>
 * `USER_REPLY_TEXT` put your text to show when user sends any message, use HTML
 
 
